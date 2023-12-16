@@ -1,8 +1,36 @@
 package database
 
-type Database struct {
-}
+import (
+	"log"
+	"os"
 
-func GetDB() (*Database, error) {
-	return &Database{}, nil
+	"github.com/joho/godotenv"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+)
+
+var DB *gorm.DB
+
+// const (
+// 	host = "localhost"
+// 	port = 5432
+// 	username = "postgres"
+// 	dbname = "ForumZone"
+// )
+
+func ConnectToDB() (*gorm.DB, error) {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	dsn := os.Getenv("DB_URL")
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	DB = db
+
+	log.Println("Connected to Postgres!")
+	return db, nil
 }

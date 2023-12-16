@@ -1,8 +1,10 @@
 package router
 
 import (
-	"github.com/CVWO/sample-go-app/internal/routes"
+	"github.com/CVWO-Backend/internal/middlewares"
+	"github.com/CVWO-Backend/internal/routes"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func Setup() chi.Router {
@@ -12,5 +14,7 @@ func Setup() chi.Router {
 }
 
 func setUpRoutes(r chi.Router) {
+	r.Use(middleware.Recoverer)
+	r.Use(middlewares.CORS)
 	r.Group(routes.GetRoutes())
 }

@@ -1,20 +1,20 @@
 package routes
 
 import (
-	"encoding/json"
-	"net/http"
-
-	"github.com/CVWO/sample-go-app/internal/handlers/users"
+	handlers "github.com/CVWO-Backend/internal/handlers"
 	"github.com/go-chi/chi/v5"
 )
 
 func GetRoutes() func(r chi.Router) {
 	return func(r chi.Router) {
-		r.Get("/users", func(w http.ResponseWriter, req *http.Request) {
-			response, _ := users.HandleList(w, req)
+		r.Get("/createCategory", handlers.CreateCategory)
+		r.Get("/refresh", handlers.RefreshToken)
+		r.Post("/signup", handlers.SignUp)
+		r.Post("/login", handlers.Authenticate)
+		r.Get("/logout", handlers.Logout)
 
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
-		})
+		r.Get("/", handlers.Home)
 	}
 }
+
+

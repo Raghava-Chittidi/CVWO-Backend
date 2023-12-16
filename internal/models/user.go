@@ -1,12 +1,26 @@
 package models
 
-import "fmt"
+import (
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
+)
 
 type User struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	gorm.Model
+	Username string `json:"username" gorm:"unique"`
+	Email string `json:"email" gorm:"unique"`
+	Password string `json:"password"`
+	// ImageUrl string `json:"ImageUrl"`
+	Threads []Thread `json:"threads"`
+	Comments []Comment `json:"comments"`
 }
 
-func (user *User) Greet() string {
-	return fmt.Sprintf("Hello, I am %s", user.Name)
+func (u *User) VerifyPassword(plaintext string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plaintext))
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
+
