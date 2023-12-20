@@ -3,6 +3,9 @@ package handlers
 import (
 	"net/http"
 
+	data "github.com/CVWO-Backend/internal/dataaccess"
+	"github.com/CVWO-Backend/internal/database"
+	"github.com/CVWO-Backend/internal/models"
 	"github.com/CVWO-Backend/internal/util"
 )
 
@@ -29,29 +32,51 @@ func Home(w http.ResponseWriter, r *http.Request) {
 	_ = util.WriteJSON(w, payload, http.StatusOK)
 }
 
-// func AllThreads(w http.ResponseWriter, r *http.Request) (*api.Response, error) {
-	// database.DB.Create()
+func CreateThread(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		Title string `json:"title"`
+		Content string `json:"content"`
+		ImageUrl string `json:"imageUrl"`
+		Username string `json:"username"`
+		Category string `json:"category"`
+	}
 
-	// if err != nil {
-	// 	return nil, errors.Wrap(err, fmt.Sprintf(ErrRetrieveDatabase, ListUsers))
-	// }
+	err := util.ReadJSON(w, r, &payload)
+	if err != nil {
+		util.ErrorJSON(w, err)
+	}
 
-	// users, err := users.List(db)
-	// if err != nil {
-	// 	return nil, errors.Wrap(err, fmt.Sprintf(ErrRetrieveUsers, ListUsers))
-	// }
+	category, err := data.GetCategoryByName(payload.Category)
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusInternalServerError)
+	}
 
-	// data, err := json.Marshal(users)
-	// if err != nil {
-	// 	return nil, errors.Wrap(err, fmt.Sprintf(ErrEncodeView, ListUsers))
-	// }
+	user, err := data.GetUserByUsername(payload.Username)
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusInternalServerError)
+	}
 
-	// return &api.Response{
-	// 	Payload: api.Payload{
-	// 		Data: nil,
-	// 	},
-	// 	Messages: []string{SuccessfulListUsersMessage},
-	// }, nil
+	newThread := &models.Thread{Title: payload.Title, Content: payload.Content, ImageUrl: payload.ImageUrl, 
+								UserID: int(user.ID), CategoryID: int(category.ID)}
+	result := database.DB.Table("threads").Create(newThread)
+	if result.Error != nil {
+		util.ErrorJSON(w, result.Error, http.StatusInternalServerError)
+	}
 
+	var message = struct {
+		Message string `json:"message"`
+	} {
+		Message: "Thread successfully created!",
+	}
 	
-// }
+	util.WriteJSON(w, message, http.StatusCreated)
+}
+
+func GetThreads(w http.ResponseWriter, r *http.Request) {
+	threads, err := data.GetAllPreloadedThreads()
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusInternalServerError)
+	}
+
+	util.WriteJSON(w, threads, http.StatusOK)
+}

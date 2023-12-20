@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	data "github.com/CVWO-Backend/internal/dataaccess"
 	"github.com/CVWO-Backend/internal/database"
 	"github.com/CVWO-Backend/internal/models"
 	"github.com/CVWO-Backend/internal/util"
@@ -19,11 +20,20 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 	cat8 := &models.Category{Name: "Education", Threads: []models.Thread{}}
 	category := []*models.Category{cat1, cat2, cat3, cat4, cat5, cat6, cat7, cat8}
 
-	result := database.DB.Create(category)
+	result := database.DB.Table("categories").Create(category)
 	if result.Error != nil {
 		util.ErrorJSON(w, result.Error, http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func GetCategories(w http.ResponseWriter, r *http.Request) {
+	categories, err := data.GetAllCategories()
+	if err != nil {
+		util.ErrorJSON(w, err)
+	}
+
+	util.WriteJSON(w, categories, http.StatusOK)
 }

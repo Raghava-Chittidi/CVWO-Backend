@@ -6,10 +6,13 @@ import (
 
 type Thread struct {
 	gorm.Model
-	Topic string `json:"topic"`
+	Title string `json:"title"`
 	Content string `json:"content"`
-	UserID uint `json:"userId"`
-	CategoryID uint `json:"categoryId"`
+	ImageUrl string `json:"imageUrl"`
+	UserID int `json:"userId"`
+	User User `json:"user"`
+	CategoryID int `json:"categoryId"`
+	Category Category `json:"category"`
 	Comments []Comment `json:"comments"`
 }
 

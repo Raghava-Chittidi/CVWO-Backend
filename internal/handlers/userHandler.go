@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/CVWO-Backend/internal/auth"
+	data "github.com/CVWO-Backend/internal/dataaccess"
 	"github.com/CVWO-Backend/internal/database"
 	"github.com/CVWO-Backend/internal/models"
 	"github.com/CVWO-Backend/internal/util"
@@ -41,7 +42,7 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 				util.ErrorJSON(w, errors.New("Unknown user!"), http.StatusUnauthorized)
 			}
 
-			user, err := GetUserById(userId)
+			user, err := data.GetUserById(userId)
 			if err != nil {
 				util.ErrorJSON(w, errors.New("Unknown user!"), http.StatusUnauthorized)
 			}
@@ -77,7 +78,7 @@ func Authenticate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate user against database
-	user, err := GetUserByEmail(reqPayload.Email)
+	user, err := data.GetUserByEmail(reqPayload.Email)
 	if err != nil {
 		util.ErrorJSON(w, errors.New("Invalid Credentials!"))
 		return
@@ -126,7 +127,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = GetUserByUsername(payload.Username)
+	_, err = data.GetUserByUsername(payload.Username)
 	if err != gorm.ErrRecordNotFound {
 		util.ErrorJSON(w, errors.New("Username is in use!"))
 		return
@@ -139,7 +140,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	} 
 
-	_, err = GetUserByEmail(payload.Email)
+	_, err = data.GetUserByEmail(payload.Email)
 	if err != gorm.ErrRecordNotFound {
 		util.ErrorJSON(w, errors.New("Email is in use!"))
 		return
@@ -157,7 +158,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 	user := models.User{Username: payload.Username, Email: payload.Email, Password: string(hashedPw)}
 
-	result := database.DB.Create(&user)
+	result := database.DB.Table("users").Create(&user)
 	if result.Error != nil {
 		util.ErrorJSON(w, result.Error, http.StatusInternalServerError)
 		return
@@ -184,34 +185,4 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 func Logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, auth.Auth.DeleteRefreshCookie())
 	w.WriteHeader(http.StatusAccepted)
-}
-
-func GetUserByEmail(email string) (*models.User, error) {
-	var user models.User
-	result := database.DB.Where("email = ?", email).First(&user)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	return &user, nil
-}
-
-func GetUserById(id int) (*models.User, error) {
-	var user models.User
-	result := database.DB.Where("id = ?", id).First(&user)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	return &user, nil
-}
-
-func GetUserByUsername(username string) (*models.User, error) {
-	var user models.User
-	result := database.DB.Where("username = ?", username).First(&user)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	return &user, nil
 }
