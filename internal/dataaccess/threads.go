@@ -3,7 +3,6 @@ package data
 import (
 	"github.com/CVWO-Backend/internal/database"
 	"github.com/CVWO-Backend/internal/models"
-	"gorm.io/gorm"
 )
 
 func GetAllThreads() ([]*models.Thread, error) {
@@ -18,9 +17,8 @@ func GetAllThreads() ([]*models.Thread, error) {
 
 func GetAllPreloadedThreads() ([]*models.Thread, error) {
 	var threads []*models.Thread
-	result := database.DB.Table("threads").Preload("User", func(tx *gorm.DB) *gorm.DB {
-		return tx.Select("id", "email", "username")
-	}).Preload("Category").Find(&threads)
+	result := database.DB.Table("threads").Preload("User").
+			  Preload("Comments.User").Preload("Category").Find(&threads)
 
 	if result.Error != nil {
 		return nil, result.Error

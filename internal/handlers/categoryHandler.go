@@ -33,6 +33,7 @@ func GetCategories(w http.ResponseWriter, r *http.Request) {
 	categories, err := data.GetAllCategories()
 	if err != nil {
 		util.ErrorJSON(w, err)
+		return
 	}
 
 	util.WriteJSON(w, categories, http.StatusOK)

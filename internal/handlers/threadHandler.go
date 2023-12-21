@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	data "github.com/CVWO-Backend/internal/dataaccess"
@@ -44,16 +45,34 @@ func CreateThread(w http.ResponseWriter, r *http.Request) {
 	err := util.ReadJSON(w, r, &payload)
 	if err != nil {
 		util.ErrorJSON(w, err)
+		return
+	}
+
+	if payload.Category == "" {
+		util.ErrorJSON(w, errors.New("Category cannot be empty!"))
+		return
+	}
+
+	if payload.Title == "" {
+		util.ErrorJSON(w, errors.New("Title cannot be empty!"))
+		return
+	}
+
+	if payload.Content == "" {
+		util.ErrorJSON(w, errors.New("Content cannot be empty!"))
+		return
 	}
 
 	category, err := data.GetCategoryByName(payload.Category)
 	if err != nil {
 		util.ErrorJSON(w, err, http.StatusInternalServerError)
+		return
 	}
 
 	user, err := data.GetUserByUsername(payload.Username)
 	if err != nil {
 		util.ErrorJSON(w, err, http.StatusInternalServerError)
+		return
 	}
 
 	newThread := &models.Thread{Title: payload.Title, Content: payload.Content, ImageUrl: payload.ImageUrl, 
@@ -61,6 +80,7 @@ func CreateThread(w http.ResponseWriter, r *http.Request) {
 	result := database.DB.Table("threads").Create(newThread)
 	if result.Error != nil {
 		util.ErrorJSON(w, result.Error, http.StatusInternalServerError)
+		return
 	}
 
 	var message = struct {
@@ -76,6 +96,7 @@ func GetThreads(w http.ResponseWriter, r *http.Request) {
 	threads, err := data.GetAllPreloadedThreads()
 	if err != nil {
 		util.ErrorJSON(w, err, http.StatusInternalServerError)
+		return
 	}
 
 	util.WriteJSON(w, threads, http.StatusOK)

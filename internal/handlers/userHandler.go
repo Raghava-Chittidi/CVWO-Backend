@@ -35,16 +35,19 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 			})
 			if err != nil {
 				util.ErrorJSON(w, errors.New("Unauthorized!"), http.StatusUnauthorized)
+				return
 			}
 
 			userId, err := strconv.Atoi(claims.Subject)
 			if err != nil {
 				util.ErrorJSON(w, errors.New("Unknown user!"), http.StatusUnauthorized)
+				return
 			}
 
 			user, err := data.GetUserById(userId)
 			if err != nil {
 				util.ErrorJSON(w, errors.New("Unknown user!"), http.StatusUnauthorized)
+				return
 			}
 
 			u := auth.JwtUser{
@@ -55,6 +58,7 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 			tokenPair, err := auth.Auth.GenerateTokenPair(&u)
 			if err != nil {
 				util.ErrorJSON(w, errors.New("Error generating tokens!"), http.StatusUnauthorized)
+				return
 			}
 
 			http.SetCookie(w, auth.Auth.GenerateRefreshCookie(tokenPair.RefreshToken))

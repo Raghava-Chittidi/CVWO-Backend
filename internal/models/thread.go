@@ -13,6 +13,6 @@ type Thread struct {
 	User User `json:"user"`
 	CategoryID int `json:"categoryId"`
 	Category Category `json:"category"`
-	Comments []Comment `json:"comments"`
+	Comments []Comment `json:"comments" gorm:"preload:true"`
 }
 

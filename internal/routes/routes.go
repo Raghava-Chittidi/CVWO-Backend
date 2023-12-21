@@ -14,6 +14,7 @@ func GetRoutes() func(r chi.Router) {
 		r.Post("/signup", handlers.SignUp)
 		r.Post("/login", handlers.Authenticate)
 		r.Post("/createThread", handlers.CreateThread)
+		r.Post("/createComment", handlers.CreateComment)
 		r.Get("/logout", handlers.Logout)
 
 		r.Get("/", handlers.Home)
