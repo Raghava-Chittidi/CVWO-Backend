@@ -15,25 +15,27 @@ func GetAllComments() ([]*models.Comment, error) {
 	return comments, nil
 }
 
-// func GetAllPreloadedThreads() ([]*models.Thread, error) {
-// 	var threads []*models.Thread
-// 	result := database.DB.Table("threads").Preload("User", func(tx *gorm.DB) *gorm.DB {
-// 		return tx.Select("id", "email", "username")
-// 	}).Preload("Category").Find(&threads)
-
-// 	if result.Error != nil {
-// 		return nil, result.Error
-// 	}
-
-// 	return threads, nil
-// }
-
 func GetCommentsByThreadId(id int) ([]*models.Comment, error) {
 	var comments []*models.Comment
-	result := database.DB.Table("comments").Where("thread_id = ?", id).First(&comments)
+	result := database.DB.Table("comments").Where("thread_id = ?", id).Order("created_at DESC").First(&comments)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
 	return comments, nil
+}
+
+func GetPreloadedCommentById(id int) (*models.Comment, error) {
+	var comment models.Comment
+	result := database.DB.Table("comments").Preload("User").Where("id = ?", id).First(&comment)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &comment, nil
+}
+
+func DeleteCommentById(id int) (error) {
+	result := database.DB.Table("comments").Delete(&models.Comment{}, id)
+	return result.Error
 }

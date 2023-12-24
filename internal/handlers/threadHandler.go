@@ -3,11 +3,14 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
+	"github.com/CVWO-Backend/internal/auth"
 	data "github.com/CVWO-Backend/internal/dataaccess"
 	"github.com/CVWO-Backend/internal/database"
 	"github.com/CVWO-Backend/internal/models"
 	"github.com/CVWO-Backend/internal/util"
+	"github.com/go-chi/chi/v5"
 )
 
 // const (
@@ -19,26 +22,11 @@ import (
 // 	ErrEncodeView              = "Failed to retrieve users in %s"
 // )
 
-func Home(w http.ResponseWriter, r *http.Request) {
-	var payload = struct {
-		Status string `json:"status"`
-		Message string `json:"message"`
-		Version string `json:"version"`
-	} {
-		Status: "active",
-		Message: "ForumZone running!",
-		Version: "1.0.0",
-	}
-
-	_ = util.WriteJSON(w, payload, http.StatusOK)
-}
-
 func CreateThread(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Title string `json:"title"`
 		Content string `json:"content"`
 		ImageUrl string `json:"imageUrl"`
-		Username string `json:"username"`
 		Category string `json:"category"`
 	}
 
@@ -69,9 +57,15 @@ func CreateThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := data.GetUserByUsername(payload.Username)
+	_, claims, err := auth.Auth.VerifyAuthorisationToken(w, r)
 	if err != nil {
-		util.ErrorJSON(w, err, http.StatusInternalServerError)
+		util.ErrorJSON(w, err, http.StatusUnauthorized)
+		return
+	}
+
+	user, err := data.GetUserByUsername(claims.Username)
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -83,13 +77,14 @@ func CreateThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var message = struct {
-		Message string `json:"message"`
-	} {
-		Message: "Thread successfully created!",
+	thread, err := data.GetPreloadedThreadById(int(newThread.ID))
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusInternalServerError)
+		return
 	}
-	
-	util.WriteJSON(w, message, http.StatusCreated)
+
+	data := util.JSONResponse{Error: false, Message: "Thread successfully created!", Data: *thread}
+	util.WriteJSON(w, data, http.StatusCreated)
 }
 
 func GetThreads(w http.ResponseWriter, r *http.Request) {
@@ -100,4 +95,21 @@ func GetThreads(w http.ResponseWriter, r *http.Request) {
 	}
 
 	util.WriteJSON(w, threads, http.StatusOK)
+}
+
+func GetThread(w http.ResponseWriter, r *http.Request) {
+	// id, err := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/threads/"))
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		util.ErrorJSON(w, err)
+		return
+	}
+
+	thread, err := data.GetPreloadedThreadById(id)
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	util.WriteJSON(w, thread, http.StatusOK)
 }

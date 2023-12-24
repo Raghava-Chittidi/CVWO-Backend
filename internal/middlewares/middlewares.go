@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/CVWO-Backend/internal/auth"
 	"github.com/joho/godotenv"
 )
 
@@ -22,5 +23,16 @@ func CORS(h http.Handler) http.Handler {
 		} else {
 			h.ServeHTTP(w, r)
 		}
+	})
+}
+
+func AuthoriseUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _, err := auth.Auth.VerifyAuthorisationToken(w, r)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
 }

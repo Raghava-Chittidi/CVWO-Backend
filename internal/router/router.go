@@ -17,4 +17,8 @@ func setUpRoutes(r chi.Router) {
 	r.Use(middleware.Recoverer)
 	r.Use(middlewares.CORS)
 	r.Group(routes.GetRoutes())
+	r.Group(func(s chi.Router) {
+		s.Use(middlewares.AuthoriseUser)
+		s.Group(routes.RestrictedRoutes())
+	})
 }

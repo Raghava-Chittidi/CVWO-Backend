@@ -3,16 +3,18 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
+	"github.com/CVWO-Backend/internal/auth"
 	data "github.com/CVWO-Backend/internal/dataaccess"
 	"github.com/CVWO-Backend/internal/database"
 	"github.com/CVWO-Backend/internal/models"
 	"github.com/CVWO-Backend/internal/util"
+	"github.com/go-chi/chi/v5"
 )
 
 func CreateComment(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
-		Username string `json:"username"`
 		Comment string `json:"comment"`
 		ThreadID int `json:"threadId"`
 	}
@@ -28,9 +30,15 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := data.GetUserByUsername(payload.Username)
+	_, claims, err := auth.Auth.VerifyAuthorisationToken(w, r)
 	if err != nil {
-		util.ErrorJSON(w, err, http.StatusInternalServerError)
+		util.ErrorJSON(w, err, http.StatusUnauthorized)
+		return
+	}
+
+	user, err := data.GetUserByUsername(claims.Username)
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -41,21 +49,104 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var message = struct {
-		Message string `json:"message"`
-	} {
-		Message: "Commented successfully!",
+	comment, err := data.GetPreloadedCommentById(int(newComment.ID))
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusInternalServerError)
+		return
 	}
 	
-	util.WriteJSON(w, message, http.StatusCreated)
+	data := util.JSONResponse{Error: false, Message: "Commented successfully!", Data: *comment}
+	util.WriteJSON(w, data, http.StatusCreated)
 }
 
 func GetComments(w http.ResponseWriter, r *http.Request) {
-	threads, err := data.GetAllPreloadedThreads()
+	threads, err := data.GetAllComments()
 	if err != nil {
 		util.ErrorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	util.WriteJSON(w, threads, http.StatusOK)
+}
+
+func EditComment(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id")) 
+	if err != nil {
+		util.ErrorJSON(w, err)
+		return
+	}
+
+	var payload struct {
+		Content string `json:"content"`
+	}
+
+	err = util.ReadJSON(w, r, &payload)
+	if err != nil {
+		util.ErrorJSON(w, err)
+		return
+	}
+
+	if payload.Content == "" {
+		util.ErrorJSON(w, errors.New("Comment cannot be empty!"))
+		return
+	}
+
+	comment, err := data.GetPreloadedCommentById(id)
+	if err != nil {
+		util.ErrorJSON(w, err)
+		return
+	}
+
+	_, claims, err := auth.Auth.VerifyAuthorisationToken(w, r)
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusUnauthorized)
+		return
+	}
+
+	user, err := data.GetUserByUsername(claims.Username)
+	if err != nil || comment.User.ID != user.ID {
+		util.ErrorJSON(w, errors.New("Unauthorized!"), http.StatusUnauthorized)
+		return
+	}
+
+	comment.Content = payload.Content
+	database.DB.Save(&comment)
+	
+	data := util.JSONResponse{Error: false, Message: "Edited comment successfully!"}
+	util.WriteJSON(w, data, http.StatusOK)
+}
+
+func DeleteComment(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		util.ErrorJSON(w, err)
+		return
+	}
+
+	comment, err := data.GetPreloadedCommentById(id)
+	if err != nil {
+		util.ErrorJSON(w, err)
+		return
+	}
+
+	_, claims, err := auth.Auth.VerifyAuthorisationToken(w, r)
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusUnauthorized)
+		return
+	}
+
+	user, err := data.GetUserByUsername(claims.Username)
+	if err != nil || comment.User.ID != user.ID {
+		util.ErrorJSON(w, errors.New("Unauthorized!"), http.StatusUnauthorized)
+		return
+	}
+
+	err = data.DeleteCommentById(id)
+	if err != nil {
+		util.ErrorJSON(w, err)
+		return
+	}
+
+	data := util.JSONResponse{Error: false, Message: "Deleted comment successfully!"}
+	util.WriteJSON(w, data, http.StatusOK)
 }
