@@ -14,5 +14,7 @@ type Thread struct {
 	CategoryID int `json:"categoryId"`
 	Category Category `json:"category"`
 	Comments []Comment `json:"comments" gorm:"preload:true"`
+	Likes []ThreadLike `json:"likes"`
+	Favourites []Favourite `json:"favourites"`
 }
 

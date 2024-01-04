@@ -19,7 +19,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	auth.GenerateAuthInfo()
+	auth.GenerateAuth()
 	// util.Migrate()
 
 	log.Fatalln(http.ListenAndServe(":8000", r))

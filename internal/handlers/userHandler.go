@@ -17,10 +17,11 @@ import (
 	"gorm.io/gorm"
 )
 type authInfo struct {
-	AccessToken string
-	RefreshToken string
 	Email string
 	Username string
+	ID int
+	AccessToken string
+	RefreshToken string
 }
 
 func RefreshToken(w http.ResponseWriter, r *http.Request) {
@@ -50,64 +51,61 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			u := auth.JwtUser{
+			authenticatedUser := auth.AuthenticatedUser{
 				ID: int(user.ID),
 				Username: user.Username,
 			}
 
-			tokenPair, err := auth.Auth.GenerateTokenPair(&u)
+			tokens, err := auth.Auth.GenerateTokens(&authenticatedUser)
 			if err != nil {
 				util.ErrorJSON(w, errors.New("Error generating tokens!"), http.StatusUnauthorized)
 				return
 			}
 
-			http.SetCookie(w, auth.Auth.GenerateRefreshCookie(tokenPair.RefreshToken))
-			authInfo := authInfo{AccessToken: tokenPair.Token, RefreshToken: tokenPair.RefreshToken, Email: user.Email, Username: user.Username}
+			http.SetCookie(w, auth.Auth.GenerateRefreshCookie(tokens.RefreshToken))
+			authInfo := authInfo{Email: user.Email, Username: user.Username, ID: int(user.ID), 
+								 AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken}
 			util.WriteJSON(w, authInfo, http.StatusOK)
 		}
 	}
 }
 
-func Authenticate(w http.ResponseWriter, r *http.Request) {
-	// Read JSON payload
-	var reqPayload struct {
+func Login(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
 		Email string `json:"email"`
 		Password string `json:"password"`
 	}
 
-	err := util.ReadJSON(w, r, &reqPayload)
+	err := util.ReadJSON(w, r, &payload)
 	if err != nil {
 		util.ErrorJSON(w, err)
 		return
 	}
 
-	// Validate user against database
-	user, err := data.GetUserByEmail(reqPayload.Email)
+	user, err := data.GetUserByEmail(payload.Email)
 	if err != nil {
 		util.ErrorJSON(w, errors.New("Invalid Credentials!"))
 		return
 	}
 
-	// Check password
-	valid, err := user.VerifyPassword(reqPayload.Password)
+	valid, err := user.VerifyPassword(payload.Password)
 	if err != nil || !valid {
 		util.ErrorJSON(w, errors.New("Invalid Credentials!"))
 		return
 	}
 
-	// Create a jwtUser
-	jwtUser := auth.JwtUser {
+	authenticatedUser := auth.AuthenticatedUser {
 		ID: int(user.ID),
 		Username: user.Username,
 	}
 
-	// Generate tokens
-	tokens, err := auth.Auth.GenerateTokenPair(&jwtUser)
+	tokens, err := auth.Auth.GenerateTokens(&authenticatedUser)
 	if err != nil {
 		util.ErrorJSON(w, err)
 		return
 	}
-	authInfo := authInfo{AccessToken: tokens.Token, RefreshToken: tokens.RefreshToken, Email: user.Email, Username: user.Username}
+	authInfo := authInfo{Email: user.Email, Username: user.Username, ID: int(user.ID), 
+						 AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken}
 	refreshCookie := auth.Auth.GenerateRefreshCookie(tokens.RefreshToken)
 	http.SetCookie(w, refreshCookie)
 	util.WriteJSON(w, authInfo, http.StatusAccepted)
@@ -160,27 +158,26 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		util.ErrorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
-	user := models.User{Username: payload.Username, Email: payload.Email, Password: string(hashedPw)}
 
+	user := models.User{Username: payload.Username, Email: payload.Email, Password: string(hashedPw)}
 	result := database.DB.Table("users").Create(&user)
 	if result.Error != nil {
 		util.ErrorJSON(w, result.Error, http.StatusInternalServerError)
 		return
 	}
 
-	// Create a jwtUser
-	jwtUser := auth.JwtUser {
+	authenticatedUser := auth.AuthenticatedUser {
 		ID: int(user.ID),
 		Username: user.Username,
 	}
 
-	// Generate tokens
-	tokens, err := auth.Auth.GenerateTokenPair(&jwtUser)
+	tokens, err := auth.Auth.GenerateTokens(&authenticatedUser)
 	if err != nil {
 		util.ErrorJSON(w, err)
 		return
 	}
-	authInfo := authInfo{AccessToken: tokens.Token, RefreshToken: tokens.RefreshToken, Email: user.Email, Username: user.Username}
+	authInfo := authInfo{Email: user.Email, Username: user.Username, ID: int(user.ID), 
+						 AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken}
 	refreshCookie := auth.Auth.GenerateRefreshCookie(tokens.RefreshToken)
 	http.SetCookie(w, refreshCookie)
 	util.WriteJSON(w, authInfo, http.StatusAccepted)

@@ -30,7 +30,7 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, claims, err := auth.Auth.VerifyAuthorisationToken(w, r)
+	_, claims, err := auth.Auth.VerifyToken(w, r)
 	if err != nil {
 		util.ErrorJSON(w, err, http.StatusUnauthorized)
 		return
@@ -97,7 +97,7 @@ func EditComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, claims, err := auth.Auth.VerifyAuthorisationToken(w, r)
+	_, claims, err := auth.Auth.VerifyToken(w, r)
 	if err != nil {
 		util.ErrorJSON(w, err, http.StatusUnauthorized)
 		return
@@ -129,7 +129,7 @@ func DeleteComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, claims, err := auth.Auth.VerifyAuthorisationToken(w, r)
+	_, claims, err := auth.Auth.VerifyToken(w, r)
 	if err != nil {
 		util.ErrorJSON(w, err, http.StatusUnauthorized)
 		return
@@ -148,5 +148,82 @@ func DeleteComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := util.JSONResponse{Error: false, Message: "Deleted comment successfully!"}
+	util.WriteJSON(w, data, http.StatusOK)
+}
+
+func LikeComment(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		util.ErrorJSON(w, err)
+		return
+	}
+
+	_, err = data.GetCommentById(id)
+	if err != nil {
+		util.ErrorJSON(w, err)
+		return
+	}
+
+	_, claims, err := auth.Auth.VerifyToken(w, r)
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusUnauthorized)
+		return
+	}
+
+	user, err := data.GetUserByUsername(claims.Username)
+	if err != nil {
+		util.ErrorJSON(w, errors.New("Unauthorized!"), http.StatusUnauthorized)
+		return
+	}
+
+	newCommentLike := models.CommentLike{UserID: int(user.ID), CommentID: id}
+	result := database.DB.Create(&newCommentLike)
+	if result.Error != nil {
+		util.ErrorJSON(w, result.Error, http.StatusInternalServerError)
+		return
+	}
+
+	data := util.JSONResponse{Error: false, Message: "Liked comment!"}
+	util.WriteJSON(w, data, http.StatusOK)
+}
+
+func UnlikeComment(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		util.ErrorJSON(w, err)
+		return
+	}
+
+	_, err = data.GetCommentById(id)
+	if err != nil {
+		util.ErrorJSON(w, err)
+		return
+	}
+
+	_, claims, err := auth.Auth.VerifyToken(w, r)
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusUnauthorized)
+		return
+	}
+
+	user, err := data.GetUserByUsername(claims.Username)
+	if err != nil {
+		util.ErrorJSON(w, errors.New("Unauthorized!"), http.StatusUnauthorized)
+		return
+	}
+
+	commentLike, err := data.GetCommentLikeByUserAndComment(int(user.ID), id)
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	err = data.DeleteCommentLikeById(int(commentLike.ID))
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	data := util.JSONResponse{Error: false, Message: "Unliked comment!"}
 	util.WriteJSON(w, data, http.StatusOK)
 }

@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"log"
 	"net/http"
 	"os"
 
@@ -28,7 +29,8 @@ func CORS(h http.Handler) http.Handler {
 
 func AuthoriseUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _, err := auth.Auth.VerifyAuthorisationToken(w, r)
+		_, _, err := auth.Auth.VerifyToken(w, r)
+		log.Println(err)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return

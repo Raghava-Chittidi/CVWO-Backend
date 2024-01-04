@@ -8,4 +8,5 @@ type Comment struct {
 	UserID int `json:"userId"`
 	User User `json:"user" gorm:"preload:true"`
 	ThreadID int `json:"threadId"`
+	Likes []CommentLike `json:"likes"`
 }

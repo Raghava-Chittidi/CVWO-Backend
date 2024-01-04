@@ -14,57 +14,46 @@ type auth struct {
 	Issuer string
 	Audience string
 	Secret string
-	TokenExpiry time.Duration
-	RefreshExpiry time.Duration
-	CookieDomain string
 	CookiePath string
 	CookieName string
+	CookieDomain string
+	TokenExpiry time.Duration
+	RefreshExpiry time.Duration
 }
 
-type JwtUser struct {
+type AuthenticatedUser struct {
 	ID int `json:"id"`
 	Username string `json:"username"`
 }
 
-type TokenPair struct {
-	Token string `json:"access_token"`
+type Claims struct {
+	jwt.RegisteredClaims
+	Username string `json:"username"`
+}
+
+type Tokens struct {
+	AccessToken string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
 
-type Claims struct {
-	Username string `json:"username"`
-	jwt.RegisteredClaims
-}
-
-// type authInfo struct {
-// 	domain string
-// 	auth auth
-// 	JWTSecret string
-// 	JWTIssuer string
-// 	JWTAudience string
-// 	CookieDomain string
-// }
-
 var Auth auth
 
-func GenerateAuthInfo() {
+func GenerateAuth() {
 	Auth = auth{
 		Issuer: "example.com",
 		Audience: "example.com",
 		Secret: "keyboardsecret",
+		CookiePath: "/",
+		CookieName: "session-cookie",
+		CookieDomain: "",
 		TokenExpiry: time.Minute * 15,
 		RefreshExpiry: time.Hour * 24,
-		CookiePath: "/",
-		CookieDomain: "",
-		CookieName: "session-cookie",
 	}
 }
 
-func (j *auth) GenerateTokenPair(user *JwtUser) (TokenPair, error) {
-	// Create a new access token
+func (j *auth) GenerateTokens(user *AuthenticatedUser) (Tokens, error) {
 	accessToken := jwt.New(jwt.SigningMethodHS256)
 
-	// Set the claims
 	claims := accessToken.Claims.(jwt.MapClaims)
 	claims["username"] = user.Username
 	claims["sub"] = fmt.Sprint(user.ID)
@@ -72,39 +61,30 @@ func (j *auth) GenerateTokenPair(user *JwtUser) (TokenPair, error) {
 	claims["iss"] = j.Issuer
 	claims["iat"] = time.Now().UTC().Unix()
 	claims["typ"] = "JWT"
-
-	// Set the expiry for access token
 	claims["exp"] = time.Now().UTC().Add(j.TokenExpiry).Unix()
 
-	// Create signed access token
 	signedAccessToken, err := accessToken.SignedString([]byte(j.Secret))
 	if err != nil {
-		return TokenPair{}, err
+		return Tokens{}, err
 	}
 
-	// Create a new refresh token
 	refreshToken := jwt.New(jwt.SigningMethodHS256)
-
-	// Set the claims
 	refreshTokenClaims := refreshToken.Claims.(jwt.MapClaims)
 	refreshTokenClaims["sub"] = fmt.Sprint(user.ID)
 	refreshTokenClaims["iat"] = time.Now().UTC().Unix()
-
-	// Set the expiry for refresh token
 	refreshTokenClaims["exp"] = time.Now().UTC().Add(j.RefreshExpiry).Unix()
 
-	// Create signed access token
 	signedRefreshToken, err := refreshToken.SignedString([]byte(j.Secret))
 	if err != nil {
-		return TokenPair{}, err
+		return Tokens{}, err
 	}
 
-	tokenPair := TokenPair {
-		Token: signedAccessToken,
+	tokens := Tokens {
+		AccessToken: signedAccessToken,
 		RefreshToken: signedRefreshToken,
 	}
 
-	return tokenPair, nil
+	return tokens, nil
 }
 
 func (j *auth) GenerateRefreshCookie(refreshToken string) *http.Cookie {
@@ -135,34 +115,26 @@ func (j *auth) DeleteRefreshCookie() *http.Cookie {
 	}
 }
 
-func (j *auth) VerifyAuthorisationToken(w http.ResponseWriter, r *http.Request) (string, *Claims, error) {
+func (j *auth) VerifyToken(w http.ResponseWriter, r *http.Request) (string, *Claims, error) {
 	w.Header().Add("Vary", "Authorization")
 
-	// get auth header
 	authHeader := r.Header.Get("Authorization")
-
-	// sanity check
 	if authHeader == "" {
-		return "", nil, errors.New("No auth header")
+		return "", nil, errors.New("No authorization header")
 	}
 
-	// split the header on spaces
 	arr := strings.Split(authHeader, " ")
 	if len(arr) != 2 {
-		return "", nil, errors.New("Invalid auth header")
+		return "", nil, errors.New("Invalid authorization header")
 	}
 
-	// check to see if we have the word Bearer
 	if arr[0] != "Bearer" {
-		return "", nil, errors.New("Invalid auth header")
+		return "", nil, errors.New("Invalid authorization header")
 	}
 
 	token := arr[1]
-
-	// declare an empty claims
 	claims := &Claims{}
 
-	// parse the token
 	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error){
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
@@ -171,7 +143,7 @@ func (j *auth) VerifyAuthorisationToken(w http.ResponseWriter, r *http.Request) 
 	})
 
 	if err != nil {
-		if strings.HasPrefix(err.Error(), "token is expired by") {
+		if strings.HasPrefix(err.Error(), "Token is expired by") {
 			return "", nil, errors.New("Expired token")
 		}
 		return "", nil, err

@@ -27,7 +27,17 @@ func GetCommentsByThreadId(id int) ([]*models.Comment, error) {
 
 func GetPreloadedCommentById(id int) (*models.Comment, error) {
 	var comment models.Comment
-	result := database.DB.Table("comments").Preload("User").Where("id = ?", id).First(&comment)
+	result := database.DB.Table("comments").Preload("User").Preload("Likes.User").Where("id = ?", id).First(&comment)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &comment, nil
+}
+
+func GetCommentById(id int) (*models.Comment, error) {
+	var comment models.Comment
+	result := database.DB.Table("comments").Where("id = ?", id).First(&comment)
 	if result.Error != nil {
 		return nil, result.Error
 	}
