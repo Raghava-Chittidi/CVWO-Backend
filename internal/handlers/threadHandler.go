@@ -83,7 +83,7 @@ func CreateThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := util.JSONResponse{Error: false, Message: "Thread successfully created!", Data: *thread}
+	data := util.ResponseJSON{Error: false, Message: "Thread successfully created!", Data: *thread}
 	util.WriteJSON(w, data, http.StatusCreated)
 }
 
@@ -164,7 +164,7 @@ func EditThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := util.JSONResponse{Error: false, Message: "Thread successfully edited!", Data: editedThread}
+	data := util.ResponseJSON{Error: false, Message: "Thread successfully edited!", Data: editedThread}
 	util.WriteJSON(w, data, http.StatusOK)
 }
 
@@ -225,7 +225,7 @@ func DeleteThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := util.JSONResponse{Error: false, Message: "Deleted thread successfully!"}
+	data := util.ResponseJSON{Error: false, Message: "Deleted thread successfully!"}
 	util.WriteJSON(w, data, http.StatusOK)
 }
 
@@ -261,7 +261,7 @@ func LikeThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := util.JSONResponse{Error: false, Message: "Liked thread!"}
+	data := util.ResponseJSON{Error: false, Message: "Liked thread!"}
 	util.WriteJSON(w, data, http.StatusOK)
 }
 
@@ -302,7 +302,7 @@ func UnlikeThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := util.JSONResponse{Error: false, Message: "Unliked thread!"}
+	data := util.ResponseJSON{Error: false, Message: "Unliked thread!"}
 	util.WriteJSON(w, data, http.StatusOK)
 }
 
@@ -338,7 +338,7 @@ func FavouriteThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := util.JSONResponse{Error: false, Message: "Favourited thread!"}
+	data := util.ResponseJSON{Error: false, Message: "Favourited thread!"}
 	util.WriteJSON(w, data, http.StatusOK)
 }
 
@@ -379,6 +379,6 @@ func UnfavouriteThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := util.JSONResponse{Error: false, Message: "Removed thread from favourites!"}
+	data := util.ResponseJSON{Error: false, Message: "Removed thread from favourites!"}
 	util.WriteJSON(w, data, http.StatusOK)
 }

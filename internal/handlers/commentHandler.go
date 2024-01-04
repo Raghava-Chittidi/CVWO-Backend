@@ -55,7 +55,7 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	data := util.JSONResponse{Error: false, Message: "Commented successfully!", Data: *comment}
+	data := util.ResponseJSON{Error: false, Message: "Commented successfully!", Data: *comment}
 	util.WriteJSON(w, data, http.StatusCreated)
 }
 
@@ -112,7 +112,7 @@ func EditComment(w http.ResponseWriter, r *http.Request) {
 	comment.Content = payload.Content
 	database.DB.Save(&comment)
 	
-	data := util.JSONResponse{Error: false, Message: "Edited comment successfully!"}
+	data := util.ResponseJSON{Error: false, Message: "Edited comment successfully!"}
 	util.WriteJSON(w, data, http.StatusOK)
 }
 
@@ -147,7 +147,7 @@ func DeleteComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := util.JSONResponse{Error: false, Message: "Deleted comment successfully!"}
+	data := util.ResponseJSON{Error: false, Message: "Deleted comment successfully!"}
 	util.WriteJSON(w, data, http.StatusOK)
 }
 
@@ -183,7 +183,7 @@ func LikeComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := util.JSONResponse{Error: false, Message: "Liked comment!"}
+	data := util.ResponseJSON{Error: false, Message: "Liked comment!"}
 	util.WriteJSON(w, data, http.StatusOK)
 }
 
@@ -224,6 +224,6 @@ func UnlikeComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := util.JSONResponse{Error: false, Message: "Unliked comment!"}
+	data := util.ResponseJSON{Error: false, Message: "Unliked comment!"}
 	util.WriteJSON(w, data, http.StatusOK)
 }
