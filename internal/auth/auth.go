@@ -108,7 +108,7 @@ func (j *auth) DeleteRefreshCookie() *http.Cookie {
 		Value: "",
 		Expires: time.Unix(0, 0),
 		MaxAge: -1,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteNoneMode,
 		Domain: j.CookieDomain,
 		HttpOnly: true,
 		Secure: true,
@@ -117,7 +117,6 @@ func (j *auth) DeleteRefreshCookie() *http.Cookie {
 
 func (j *auth) VerifyToken(w http.ResponseWriter, r *http.Request) (string, *Claims, error) {
 	w.Header().Add("Vary", "Authorization")
-
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
 		return "", nil, errors.New("No authorization header")

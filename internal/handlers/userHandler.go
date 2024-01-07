@@ -131,7 +131,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 
 	_, err = data.GetUserByUsername(payload.Username)
 	if err != gorm.ErrRecordNotFound {
-		util.ErrorJSON(w, errors.New("Username is in use!"))
+		util.ErrorJSON(w, errors.New("Username is already in use!"))
 		return
 	}
 

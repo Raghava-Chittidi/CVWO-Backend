@@ -14,7 +14,7 @@ func GetRoutes() func(r chi.Router) {
 		r.Get("/refresh", handlers.RefreshToken)
 		r.Post("/signup", handlers.SignUp)
 		r.Post("/login", handlers.Login)
-		r.Post("/logout", handlers.Logout)
+		r.Get("/logout", handlers.Logout)
 	}
 }
 
