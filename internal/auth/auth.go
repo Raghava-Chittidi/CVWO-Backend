@@ -53,12 +53,11 @@ func GenerateAuth() {
 
 func (j *auth) GenerateTokens(user *AuthenticatedUser) (Tokens, error) {
 	accessToken := jwt.New(jwt.SigningMethodHS256)
-
 	claims := accessToken.Claims.(jwt.MapClaims)
 	claims["username"] = user.Username
 	claims["sub"] = fmt.Sprint(user.ID)
-	claims["aud"] = j.Audience
 	claims["iss"] = j.Issuer
+	claims["aud"] = j.Audience
 	claims["iat"] = time.Now().UTC().Unix()
 	claims["typ"] = "JWT"
 	claims["exp"] = time.Now().UTC().Add(j.TokenExpiry).Unix()
@@ -92,12 +91,12 @@ func (j *auth) GenerateRefreshCookie(refreshToken string) *http.Cookie {
 		Name: j.CookieName,
 		Path: j.CookiePath,
 		Value: refreshToken,
-		Expires: time.Now().Add(j.RefreshExpiry),
-		MaxAge: int(j.RefreshExpiry.Seconds()),
-		SameSite: http.SameSiteNoneMode,
 		Domain: j.CookieDomain,
-		HttpOnly: true,
+		MaxAge: int(j.RefreshExpiry.Seconds()),
+		Expires: time.Now().Add(j.RefreshExpiry),
+		SameSite: http.SameSiteNoneMode,
 		Secure: true,
+		HttpOnly: true,
 	}
 }
 
@@ -106,12 +105,12 @@ func (j *auth) DeleteRefreshCookie() *http.Cookie {
 		Name: j.CookieName,
 		Path: j.CookiePath,
 		Value: "",
-		Expires: time.Unix(0, 0),
-		MaxAge: -1,
-		SameSite: http.SameSiteNoneMode,
 		Domain: j.CookieDomain,
-		HttpOnly: true,
+		MaxAge: -1,
+		Expires: time.Unix(0, 0),
+		SameSite: http.SameSiteNoneMode,
 		Secure: true,
+		HttpOnly: true,
 	}
 }
 
@@ -123,11 +122,7 @@ func (j *auth) VerifyToken(w http.ResponseWriter, r *http.Request) (string, *Cla
 	}
 
 	arr := strings.Split(authHeader, " ")
-	if len(arr) != 2 {
-		return "", nil, errors.New("Invalid authorization header")
-	}
-
-	if arr[0] != "Bearer" {
+	if len(arr) != 2 || arr[0] != "Bearer" {
 		return "", nil, errors.New("Invalid authorization header")
 	}
 
@@ -135,16 +130,14 @@ func (j *auth) VerifyToken(w http.ResponseWriter, r *http.Request) (string, *Cla
 	claims := &Claims{}
 
 	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error){
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		_, ok := token.Method.(*jwt.SigningMethodHMAC);
+		if !ok {
+			return nil, errors.New("Unexpected signing method")
 		}
 		return []byte(j.Secret), nil
 	})
 
 	if err != nil {
-		if strings.HasPrefix(err.Error(), "Token is expired by") {
-			return "", nil, errors.New("Expired token")
-		}
 		return "", nil, err
 	}
 

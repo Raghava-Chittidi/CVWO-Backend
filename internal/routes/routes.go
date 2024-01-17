@@ -5,9 +5,9 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func GetRoutes() func(r chi.Router) {
+func UnrestrictedRoutes() func(r chi.Router) {
 	return func(r chi.Router) {
-		r.Get("/create/category", handlers.CreateCategory)
+		// r.Get("/create/category", handlers.CreateCategory)
 		r.Get("/categories", handlers.GetCategories)
 		r.Get("/threads", handlers.GetThreads)
 		r.Get("/threads/{id}", handlers.GetThread)

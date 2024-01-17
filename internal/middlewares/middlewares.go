@@ -6,12 +6,11 @@ import (
 	"os"
 
 	"github.com/CVWO-Backend/internal/auth"
-	"github.com/joho/godotenv"
 )
 
 func CORS(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		godotenv.Load("../.env")
+		// godotenv.Load("../.env")
 		clientUrl := os.Getenv("CLIENT_URL")
 		w.Header().Set("Access-Control-Allow-Origin", clientUrl)
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -27,7 +26,7 @@ func CORS(h http.Handler) http.Handler {
 	})
 }
 
-func AuthoriseUser(next http.Handler) http.Handler {
+func AuthoriseUser(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _, err := auth.Auth.VerifyToken(w, r)
 		log.Println(err)
@@ -35,6 +34,6 @@ func AuthoriseUser(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		next.ServeHTTP(w, r)
+		h.ServeHTTP(w, r)
 	})
 }

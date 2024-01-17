@@ -13,15 +13,6 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// const (
-// 	ListUsers = "users.HandleList"
-
-// 	SuccessfulListUsersMessage = "Successfully listed users"
-// 	ErrRetrieveDatabase        = "Failed to retrieve database in %s"
-// 	ErrRetrieveUsers           = "Failed to retrieve users in %s"
-// 	ErrEncodeView              = "Failed to retrieve users in %s"
-// )
-
 func CreateThread(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Title string `json:"title"`
@@ -367,13 +358,13 @@ func UnfavouriteThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	threadLike, err := data.GetFavouriteByUserAndThread(int(user.ID), id)
+	threadFavourite, err := data.GetFavouriteByUserAndThread(int(user.ID), id)
 	if err != nil {
 		util.ErrorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
-	err = data.DeleteFavouriteById(int(threadLike.ID))
+	err = data.DeleteFavouriteById(int(threadFavourite.ID))
 	if err != nil {
 		util.ErrorJSON(w, err, http.StatusInternalServerError)
 		return

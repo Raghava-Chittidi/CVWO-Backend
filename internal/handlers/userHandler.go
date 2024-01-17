@@ -17,11 +17,20 @@ import (
 	"gorm.io/gorm"
 )
 type authInfo struct {
+	ID int
 	Email string
 	Username string
-	ID int
 	AccessToken string
 	RefreshToken string
+}
+
+func VerifyPassword(password string, hashedPassword string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func RefreshToken(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +97,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	valid, err := user.VerifyPassword(payload.Password)
+	valid, err := VerifyPassword(payload.Password, user.Password)
 	if err != nil || !valid {
 		util.ErrorJSON(w, errors.New("Invalid Credentials!"))
 		return
@@ -104,6 +113,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		util.ErrorJSON(w, err)
 		return
 	}
+
 	authInfo := authInfo{Email: user.Email, Username: user.Username, ID: int(user.ID), 
 						 AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken}
 	refreshCookie := auth.Auth.GenerateRefreshCookie(tokens.RefreshToken)
@@ -176,6 +186,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		util.ErrorJSON(w, err)
 		return
 	}
+	
 	authInfo := authInfo{Email: user.Email, Username: user.Username, ID: int(user.ID), 
 						 AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken}
 	refreshCookie := auth.Auth.GenerateRefreshCookie(tokens.RefreshToken)

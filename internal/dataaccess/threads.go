@@ -57,13 +57,3 @@ func DeleteThreadById(id int) (error) {
 	result := database.DB.Table("threads").Delete(&models.Thread{}, id)
 	return result.Error
 }
-
-// func GetThreadsByUsername(username string) (*models.User, error) {
-// 	var user models.User
-// 	result := database.DB.Table("users").Where("username = ?", username).First(&user)
-// 	if result.Error != nil {
-// 		return nil, result.Error
-// 	}
-
-// 	return &user, nil
-// }

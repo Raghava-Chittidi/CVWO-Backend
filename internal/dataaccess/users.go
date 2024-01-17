@@ -5,16 +5,6 @@ import (
 	"github.com/CVWO-Backend/internal/models"
 )
 
-func GetUserByEmail(email string) (*models.User, error) {
-	var user models.User
-	result := database.DB.Table("users").Where("email = ?", email).First(&user)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	return &user, nil
-}
-
 func GetUserById(id int) (*models.User, error) {
 	var user models.User
 	result := database.DB.Table("users").Where("id = ?", id).First(&user)
@@ -28,6 +18,16 @@ func GetUserById(id int) (*models.User, error) {
 func GetUserByUsername(username string) (*models.User, error) {
 	var user models.User
 	result := database.DB.Table("users").Where("username = ?", username).First(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &user, nil
+}
+
+func GetUserByEmail(email string) (*models.User, error) {
+	var user models.User
+	result := database.DB.Table("users").Where("email = ?", email).First(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	}

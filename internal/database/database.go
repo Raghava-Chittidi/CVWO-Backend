@@ -11,13 +11,6 @@ import (
 
 var DB *gorm.DB
 
-// const (
-// 	host = "localhost"
-// 	port = 5432
-// 	username = "postgres"
-// 	dbname = "ForumZone"
-// )
-
 func ConnectToDB() (*gorm.DB, error) {
 	err := godotenv.Load("../../.env")
 	if err != nil {
@@ -31,6 +24,6 @@ func ConnectToDB() (*gorm.DB, error) {
 	}
 	DB = db
 
-	log.Println("Connected to Postgres!")
+	log.Println("Connected to database!")
 	return db, nil
 }
