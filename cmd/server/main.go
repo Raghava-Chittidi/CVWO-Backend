@@ -12,7 +12,7 @@ import (
 
 func main() {
 	r := router.Setup()
-	fmt.Print("Listening on port 8000 at http://localhost:8000!")
+	fmt.Print("Listening on port 10000!")
 
 	_, err := database.ConnectToDB()
 	if err != nil {
@@ -22,5 +22,5 @@ func main() {
 	auth.GenerateAuth()
 	// util.Migrate()
 
-	log.Fatalln(http.ListenAndServe(":8000", r))
+	log.Fatalln(http.ListenAndServe(":10000", r))
 }
